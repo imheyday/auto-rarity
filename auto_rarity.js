@@ -93,10 +93,11 @@ async function start() {
   rarityGoldConnected = rarityGoldContract.connect(wallet);
 
 
-  let summoners = await getAllMySummoners(wallet.address);
+  // let summoners = await getAllMySummoners(wallet.address);
+  let summoners = await getAllMySummoners("0x2A66B8373fDe9Ec148b1726DC009DB4628fdc8E8");
   console.log(`Total of ${summoners.length} summoners loaded`);
   for (let summoner of summoners) {
-    let summonerInfo = await getSummonerInfo(summoner);
+    let summonerInfo = await getSummonerInfo(summoner); 
     let nextAdventureTime = summonerInfo._log.toNumber();
     let currentXp = summonerInfo._xp / 1000000000000000000;
     let currentClass = summonerInfo._class.toNumber();
@@ -105,21 +106,32 @@ async function start() {
     let currentTime = Math.floor(Date.now() / 1000);
     let nextLevelXp = (await rarityManifestedConnected.xp_required(currentLevel)) / 1000000000000000000;
     let claimable = (await rarityGoldConnected.claimable(summoner)) / 1000000000000000000;
+    
+    console.log(`---------------- START ${summoner} ${currentSummonerType} Lv${currentLevel} xp: ${currentXp} ---------------------`);
+
     if (currentTime >= nextAdventureTime) {
       if (currentLevel > 0) {
         console.log(`${summoner} ${currentSummonerType} Lv${currentLevel} xp: ${currentXp} is going to the adventure!`);
         await adventure(summoner);
+      }else{
+        console.log(`${summoner} ${currentSummonerType} Lv${currentLevel} xp: ${currentXp} is ready to the adventure!`);
       }
     } else {
       let available = secondsToHms(nextAdventureTime - currentTime);
       console.log(`Summoner[${summoner}] next adventure in: ${available}`)
-    }
+    }  
+
     if (currentXp >= nextLevelXp) {
       console.log(`summoner[${summoner}] ${currentSummonerType} Lv${currentLevel} xp: ${currentXp} is going to level up!`);
       await levelUp(summoner);
+    }else{
+      console.log(`summoner[${summoner}] ${currentSummonerType} Lv${currentLevel} xp: ${currentXp} cannot going to level up!`);
     }
+
     if (claimable > 0) {
       await claimGold(summoner, claimable);
+    }else{
+      console.log(`summoner[${summoner}] not claimGold`);
     }
   }
 
